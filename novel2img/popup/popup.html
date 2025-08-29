@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novel2Img - AI生图助手</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <!-- 头部 -->
+        <header class="popup-header">
+            <div class="header-title">
+                <h1>🎨 Novel2Img</h1>
+                <span class="subtitle">AI生图助手</span>
+            </div>
+            <button class="settings-btn" id="settingsBtn" title="设置">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                </svg>
+            </button>
+        </header>
+
+        <!-- 主要内容区域 -->
+        <main class="popup-main">
+            <!-- 生成区域 -->
+            <div class="generation-section">
+                <div class="input-group">
+                    <label for="promptInput">描述你想要的图片：</label>
+                    <textarea 
+                        id="promptInput" 
+                        placeholder="例如：坐在窗边写作业的少女，温暖的阳光，美丽的画面"
+                        maxlength="500"
+                        rows="3"
+                    ></textarea>
+                    <div class="char-count">
+                        <span id="charCount">0</span>/500
+                    </div>
+                </div>
+
+                <div class="options-grid">
+                    <div class="option-group">
+                        <label for="sizeSelect">尺寸：</label>
+                        <select id="sizeSelect">
+                            <option value="512x512">512×512 (头像)</option>
+                            <option value="1024x1024" selected>1024×1024 (方形)</option>
+                            <option value="768x512">768×512 (横幅)</option>
+                            <option value="512x768">512×768 (竖幅)</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <label for="modelSelect">模型：</label>
+                        <select id="modelSelect">
+                            <option value="Qwen/Qwen-Image" selected>千问生图</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="generate-btn" id="generateBtn">
+                    <span class="btn-text">🚀 开始生成</span>
+                    <div class="loading-spinner" id="loadingSpinner" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
+                </button>
+
+                <!-- 进度显示 -->
+                <div class="progress-section" id="progressSection" style="display: none;">
+                    <div class="progress-text" id="progressText">准备中...</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <!-- 结果显示 -->
+                <div class="result-section" id="resultSection" style="display: none;">
+                    <div class="result-header">
+                        <span>✅ 生成完成！请选择你喜欢的图片：</span>
+                        <span class="duration" id="durationText"></span>
+                    </div>
+                    <div class="image-gallery" id="imageGallery">
+                        <!-- 图片选择项将动态生成 -->
+                    </div>
+                    <div class="selection-tip">
+                        <p>💡 点击选择图片，然后选择操作：</p>
+                        <div class="action-buttons" id="actionButtons" style="display: none;">
+                            <button class="action-btn download-btn" id="downloadSelectedBtn">
+                                <span>💾 下载到本地</span>
+                            </button>
+                            <button class="action-btn copy-btn" id="copySelectedBtn">
+                                <span>📋 复制图片</span>
+                            </button>
+                        </div>
+                        <p class="copy-tip">📝 复制后可在任意编辑器中粘贴使用</p>
+                    </div>
+                </div>
+
+                <!-- 错误显示 -->
+                <div class="error-section" id="errorSection" style="display: none;">
+                    <div class="error-message">
+                        <span>❌ 生成失败</span>
+                        <p id="errorText"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 历史记录区域 -->
+            <div class="history-section">
+                <div class="history-header">
+                    <h3>📚 历史记录</h3>
+                </div>
+                <div class="history-controls">
+                    <input type="search" id="historySearch" placeholder="搜索历史记录...">
+                    <button class="clear-btn" id="clearHistoryBtn">清空</button>
+                </div>
+                <div class="history-list" id="historyList">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>加载中...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 设置面板 -->
+        <div class="settings-panel" id="settingsPanel" style="display: none;">
+            <div class="panel-header">
+                <h3>⚙️ 设置</h3>
+                <button class="close-btn" id="closeSettingsBtn">×</button>
+            </div>
+            
+            <div class="panel-content">
+                <div class="setting-group">
+                    <label for="apiKeyInput">API密钥：</label>
+                    <div class="api-key-group">
+                        <input 
+                            type="password" 
+                            id="apiKeyInput" 
+                            placeholder="请输入魔搭API密钥"
+                            autocomplete="off"
+                        >
+                        <button class="toggle-visibility" id="toggleApiKey" title="显示/隐藏">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="setting-desc">
+                        请在 <a href="https://modelscope.cn/" target="_blank">魔搭社区</a> 获取API密钥
+                    </p>
+                </div>
+
+                <div class="setting-actions">
+                    <button class="save-btn" id="saveSettingsBtn">保存设置</button>
+                    <button class="test-btn" id="testApiBtn">测试连接</button>
+                </div>
+
+                <!-- API状态 -->
+                <div class="api-status" id="apiStatus" style="display: none;">
+                    <div class="status-indicator"></div>
+                    <span class="status-text"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../lib/utils.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>
